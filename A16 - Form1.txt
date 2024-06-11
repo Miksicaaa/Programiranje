@@ -1,0 +1,260 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using MySqlConnector;
+
+namespace Izlozba_pasa
+{
+    public partial class Form1 : Form
+    {
+        MySqlConnection konekcija = new MySqlConnection();
+        MySqlCommand komanda = new MySqlCommand();
+        DataTable tabela = new DataTable();
+    //    DataTable tabela1 = new DataTable();
+        MySqlDataAdapter adapter = new MySqlDataAdapter();
+        DataSet podaci = new DataSet();
+        MySqlDataReader rezultat;
+        string upit;
+        string crtica = " - "; 
+        string tacka = ".";
+        string temp = "server=localhost; user id=root; database=izlozba_pasa";
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private void load()
+        {
+
+            konekcija.ConnectionString = temp;
+            konekcija.Open();
+            komanda.Connection = konekcija;
+
+            upit = "select pasid,ime from pas";
+            komanda.CommandText = upit;
+            rezultat = komanda.ExecuteReader();
+            tabela.Reset();
+            tabela.Load(rezultat);
+            comboBox1.Items.Clear();
+            comboBox4.Items.Clear();
+            int k = tabela.Rows.Count;
+            for (int i = 0; i < k; i++)
+            {
+                string s1 = tabela.Rows[i].ItemArray[0].ToString();
+                string s2 = tabela.Rows[i].ItemArray[1].ToString();
+                comboBox4.Items.Add(s1);
+                comboBox1.Items.Add(s1 + " - " + s2);
+            }
+
+
+
+            upit = "select izlozbaid,mesto,day(datum),month(datum),year(datum) from izlozba";
+            komanda.CommandText = upit;
+            rezultat = komanda.ExecuteReader();
+            tabela.Reset();
+            tabela.Load(rezultat);
+            //tabela.Load(rezultat);
+            comboBox2.Items.Clear();
+            comboBox5.Items.Clear();
+            comboBox7.Items.Clear();
+            k = tabela.Rows.Count;
+            for (int i = 0; i < k; i++)
+            {
+                string s1 = tabela.Rows[i].ItemArray[0].ToString();
+                string s2 = tabela.Rows[i].ItemArray[1].ToString();
+                string s3 = tabela.Rows[i].ItemArray[2].ToString();
+               // s3 = s3.Substring(0,9); // ne treab jer ide day,month,year
+                string s4 = tabela.Rows[i].ItemArray[3].ToString();
+                string s5 = tabela.Rows[i].ItemArray[4].ToString();
+                comboBox5.Items.Add(s1);
+                comboBox2.Items.Add(s1 + " - " + s2 + " - " + s3+ "." + s4 + "." +s5 );
+                comboBox7.Items.Add(s1 + " - " + s2 + " - " + s3 + "." + s4 + "." + s5);
+            }
+
+            upit = "select kategorijaid,naziv from kategorija";
+            komanda.CommandText = upit;
+            rezultat = komanda.ExecuteReader();
+            tabela.Reset();
+            tabela.Load(rezultat);
+            comboBox3.Items.Clear();
+            comboBox6.Items.Clear();
+            k = tabela.Rows.Count;
+            for (int i = 0; i < k; i++)
+            {
+                string s1 = tabela.Rows[i].ItemArray[0].ToString();
+                string s2 = tabela.Rows[i].ItemArray[1].ToString();
+                comboBox6.Items.Add(s1);
+                comboBox3.Items.Add(s1 + " - " + s2);
+            }
+
+            rezultat.Close();
+            konekcija.Close();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            load();
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private void comboBox1_SelectedIndexChanged(object sender, EventArgs e) // OVO MI POVEZUJE SKRIVENI COMBO 4 SA 1
+        {
+            comboBox4.SelectedIndex = comboBox1.SelectedIndex;
+        }
+
+        private void comboBox2_SelectedIndexChanged(object sender, EventArgs e) // OVO MI POVEZUJE SKRIVENI COMBO 5 SA 2
+        {
+            comboBox5.SelectedIndex = comboBox2.SelectedIndex;
+        }
+
+        private void comboBox3_SelectedIndexChanged(object sender, EventArgs e) // OVO MI POVEZUJE SKRIVENI COMBO 6 SA 3
+        {
+            comboBox6.SelectedIndex = comboBox3.SelectedIndex;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            string s1 = comboBox4.Text;
+            string s2 = comboBox5.Text;
+            string s3 = comboBox6.Text;
+
+            konekcija.ConnectionString = temp;
+            konekcija.Open();
+            komanda.Connection = konekcija;
+            upit = "insert into rezultat(izlozbaid,kategorijaid,pasid,rezultat,napomena) values ('"+s2+"','"+s3+"','"+s1+"','NULL','NULL')";
+            komanda.CommandText = upit;
+            rezultat = komanda.ExecuteReader();
+
+            tabela.Reset();
+            tabela.Load(rezultat);
+            MessageBox.Show("UNEO SAM GA!");
+
+            rezultat.Close();
+            konekcija.Close();
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            
+           // chart1.Titles.Clear();
+          //  chart1.Titles.Add("Grafik kerova");
+
+           // string id = comboBox5.Text;
+
+            konekcija.ConnectionString = temp;
+            konekcija.Open();
+            komanda.Connection = konekcija;
+   
+               upit = "select kategorija.kategorijaid as Sifra,kategorija.naziv as Naziv_kategorije,count(kategorija.naziv) as broj_pasa from kategorija inner join rezultat on kategorija.kategorijaid=rezultat.kategorijaid where rezultat.izlozbaid="+comboBox5.Text+" group by rezultat.kategorijaid";
+           
+            komanda.CommandText = upit;
+            rezultat = komanda.ExecuteReader();
+
+            chart1.ChartAreas[0].AxisX.Title = "Kategorija";
+            chart1.ChartAreas[0].AxisY.Title = "Broj kerova";
+
+            //OVO DOLE NAM SVE TREBA ZA LABEL 7 
+
+            DataTable tabela2 = new DataTable();
+
+            tabela2.Clear();
+            tabela2.Reset();
+
+            tabela2.Load(rezultat);
+
+          //  int z = 0;
+           /* for (int i = 0; i < tabela2.Rows.Count; i++) {
+                string a1 = tabela2.Rows[i].ItemArray[2].ToString();
+                int z1 = Convert.ToInt32(a1);
+                z = z + z1;
+            }
+            label7.Text = Convert.ToString(z); // OVAJ LABEL JE UKUPAN BROJ PASA KOJI JE PRIJAVLJEN
+           */ 
+            dataGridView1.DataSource = tabela2;
+            chart1.DataSource = tabela2;
+
+            chart1.Series["Series1"].XValueMember = "Naziv_kategorije";
+            chart1.Series["Series1"].YValueMembers = "broj_pasa";
+
+            rezultat.Close();
+            konekcija.Close();
+            /*
+            //OVO DOLE NAM SVE TREBA ZA LABEL 8
+            DataTable tabela3 = new DataTable();
+            konekcija.ConnectionString = temp;
+            konekcija.Open();
+            komanda.Connection = konekcija;
+            upit = "select kategorija.kategorijaid as Sifra,kategorija.naziv as Naziv_kategorije,count(kategorija.naziv) as broj_pasa from kategorija inner join rezultat on kategorija.kategorijaid=rezultat.kategorijaid where rezultat.izlozbaid= ";
+            upit += id + " AND rezultat.rezultat='NULL' group by rezultat.kategorijaid";
+            komanda.CommandText = upit;
+            rezultat = komanda.ExecuteReader();
+            tabela3.Load(rezultat);
+            int z2 = 0;
+            for (int i = 0; i < tabela3.Rows.Count; i++)
+            {
+                string a1 = tabela3.Rows[i].ItemArray[2].ToString();
+                int z1 = Convert.ToInt32(a1);
+                z2 = z2 + z1;
+            }
+            label8.Text = Convert.ToString(Convert.ToInt16(label7.Text) - z2); // OVAJ LABEL JE PSI KOJI SU SE TAKMICILI
+            rezultat.Close();
+            konekcija.Close();*/
+        }
+
+        private void comboBox7_SelectedIndexChanged(object sender, EventArgs e)
+        {
+           comboBox5.SelectedIndex = comboBox7.SelectedIndex;
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void tabControl1_Selected(object sender, TabControlEventArgs e)
+        {
+
+        }
+
+        private void tabControl1_Click(object sender, EventArgs e)
+        {
+            //  if (tabControl1.SelectedTab == tabPage4) Application.Exit();
+
+
+
+
+
+            if (tabControl1.SelectedTab == tabPage4) Application.Exit();
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void chart1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+    }
+}
